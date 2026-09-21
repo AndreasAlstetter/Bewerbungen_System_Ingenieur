@@ -1,0 +1,41 @@
+Meine Empfehlung für deine Bewerbung
+Ich würde deine Bewerbungen in dieser Reihenfolge priorisieren:
+
+Generative AI Engineer bei Airbus in Ulm – fachlich die stärkste Übereinstimmung.
+
+Softwareentwickler Künstliche Intelligenz bei FERCHAU in Ulm – realistischer Einstieg mit breitem Entwicklungspotenzial.
+
+KI-Toolentwicklung bei NewTec in Ulm – ideal, wenn du studienbegleitend einsteigen möchtest.
+
+Robotics Software Engineer bei ADLATUS Robotics – beste Verbindung zwischen KI, Robotik und Mechatronik.
+
+Data & KI-Spezialist in Ulm – interessant, aber wegen SAP- und Berufserfahrungsanforderungen eher anspruchsvoll.
+
+Data & AI Software Engineer oder AI Developer in Augsburg – als zweite regionale Achse neben Ulm.
+
+So solltest du dein Profil positionieren
+Dein wichtigstes Alleinstellungsmerkmal ist nicht nur, dass du KI kennst. Es ist die Verbindung aus KI, Systems Engineering und realer industrieller Anwendung.
+
+Eine geeignete Profilbeschreibung wäre:
+
+Systems-Engineering-Student und ausgebildeter Mechatroniker mit praktischer Erfahrung in industrieller Vorinbetriebnahme, Robotik und AMR-Programmierung sowie wissenschaftlicher Erfahrung in Embedding-Modellen, neuronalen Netzen, Ranking-Algorithmen und Large Language Models. Schwerpunkt auf der Implementierung KI-basierter Lösungen in technische und industrielle Systeme.
+
+Für die KI-Stellen solltest du einen eigenen Abschnitt „KI- und Softwareprojekte“ ergänzen. Dort gehören mindestens hinein:
+
+Embedding-Modell und Datengrundlage;
+
+verwendete LLMs;
+
+Architektur der Suche oder des Ranking-Systems;
+
+eingesetzte Python-Frameworks;
+
+Trainings- und Evaluationsmethoden;
+
+Datenbanken oder Vector Stores;
+
+API-, Docker- oder Git-Nutzung;
+
+messbare Ergebnisse deiner Bachelorarbeit.
+
+Gerade Airbus und FERCHAU werden vermutlich stärker auf deine konkrete Implementierung als auf die bloße Aufzählung von „KI“ im Lebenslauf achten.

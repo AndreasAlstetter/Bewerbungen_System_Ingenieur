@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+*.py[cod]
+lebenslauf/lebenslauf_preview-*.png
+Bewerbung/*_preview.png
