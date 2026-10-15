@@ -1,4 +1,5 @@
 from pathlib import Path
+import argparse
 from xml.sax.saxutils import escape
 
 from reportlab.lib import colors
@@ -12,8 +13,8 @@ from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, Paragraph, 
 
 
 BASE_DIR = Path(__file__).resolve().parent
-SOURCE = BASE_DIR / "motivationsschreiben_ferchau_optimiert.md"
-OUTPUT = BASE_DIR / "motivationsschreiben_ferchau.pdf"
+DEFAULT_SOURCE = BASE_DIR / "motivationsschreiben_ferchau_optimiert.md"
+DEFAULT_OUTPUT = BASE_DIR / "motivationsschreiben_ferchau.pdf"
 
 PAGE_WIDTH, PAGE_HEIGHT = A4
 NAVY = colors.HexColor("#10283A")
@@ -74,17 +75,23 @@ def draw_background(canvas, document):
     canvas.restoreState()
 
 
-def build_pdf():
+def build_pdf(source=DEFAULT_SOURCE, output=DEFAULT_OUTPUT):
     register_fonts()
+    global SOURCE, OUTPUT
+    SOURCE = Path(source)
+    OUTPUT = Path(output)
+    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     blocks = parse_source()
+    mt_compact = "mt_aerospace" in OUTPUT.stem.lower()
+    compact = mt_compact or "xitaso" in OUTPUT.stem.lower()
     document = BaseDocTemplate(
         str(OUTPUT),
         pagesize=A4,
-        leftMargin=20 * mm,
-        rightMargin=20 * mm,
-        topMargin=23 * mm,
-        bottomMargin=22 * mm,
-        title="Motivationsschreiben Andreas Alstetter - FERCHAU",
+        leftMargin=16 * mm if mt_compact else 20 * mm,
+        rightMargin=16 * mm if mt_compact else 20 * mm,
+        topMargin=17 * mm if mt_compact else (20 * mm if compact else 23 * mm),
+        bottomMargin=16 * mm if mt_compact else (19 * mm if compact else 22 * mm),
+        title=f"Motivationsschreiben Andreas Alstetter - {OUTPUT.stem}",
         author="Andreas Alstetter",
     )
     frame = Frame(document.leftMargin, document.bottomMargin, document.width, document.height, id="letter")
@@ -94,22 +101,33 @@ def build_pdf():
         "contact", fontName="SegoeUI", fontSize=9.2, leading=12.2, textColor=MUTED, spaceAfter=0
     )
     title_style = ParagraphStyle(
-        "title", fontName="SegoeUISemibold", fontSize=17.5, leading=21, textColor=NAVY, spaceBefore=5 * mm, spaceAfter=1.5 * mm
+        "title", fontName="SegoeUISemibold", fontSize=14.5 if mt_compact else (15.8 if compact else 17.5),
+        leading=16.8 if mt_compact else (18.5 if compact else 21), textColor=NAVY,
+        spaceBefore=3 * mm if mt_compact else (4 * mm if compact else 5 * mm), spaceAfter=1 * mm
     )
     reference_style = ParagraphStyle(
-        "reference", fontName="SegoeUISemibold", fontSize=9.3, leading=12, textColor=TEAL, spaceAfter=6 * mm
+        "reference", fontName="SegoeUISemibold", fontSize=8.2 if mt_compact else (8.8 if compact else 9.3),
+        leading=10 if mt_compact else (11 if compact else 12), textColor=TEAL,
+        spaceAfter=3 * mm if mt_compact else (4 * mm if compact else 6 * mm)
     )
     body_style = ParagraphStyle(
-        "body", fontName="SegoeUI", fontSize=9.7, leading=14.2, textColor=TEXT, alignment=TA_LEFT, spaceAfter=4.3 * mm
+        "body", fontName="SegoeUI", fontSize=8.5 if mt_compact else (9.2 if compact else 9.7),
+        leading=10.8 if mt_compact else (12.7 if compact else 14.2), textColor=TEXT, alignment=TA_LEFT,
+        spaceAfter=2.2 * mm if mt_compact else (3.2 * mm if compact else 4.3 * mm)
     )
     date_style = ParagraphStyle(
-        "date", fontName="SegoeUI", fontSize=9.2, leading=12, textColor=MUTED, spaceBefore=5 * mm, spaceAfter=6 * mm
+        "date", fontName="SegoeUI", fontSize=8.2 if mt_compact else (8.8 if compact else 9.2),
+        leading=10 if mt_compact else (11 if compact else 12), textColor=MUTED,
+        spaceBefore=3 * mm if mt_compact else (4 * mm if compact else 5 * mm), spaceAfter=3 * mm if mt_compact else (4 * mm if compact else 6 * mm)
     )
     salutation_style = ParagraphStyle(
-        "salutation", fontName="SegoeUISemibold", fontSize=9.7, leading=14.2, textColor=TEXT, spaceAfter=4.3 * mm
+        "salutation", fontName="SegoeUISemibold", fontSize=8.5 if mt_compact else (9.2 if compact else 9.7),
+        leading=10.8 if mt_compact else (12.7 if compact else 14.2), textColor=TEXT,
+        spaceAfter=2.2 * mm if mt_compact else (3.2 * mm if compact else 4.3 * mm)
     )
     closing_style = ParagraphStyle(
-        "closing", fontName="SegoeUI", fontSize=9.7, leading=14.2, textColor=TEXT, spaceAfter=0
+        "closing", fontName="SegoeUI", fontSize=8.5 if mt_compact else (9.2 if compact else 9.7),
+        leading=10.8 if mt_compact else (12.7 if compact else 14.2), textColor=TEXT, spaceAfter=0
     )
 
     story = []
@@ -117,15 +135,18 @@ def build_pdf():
         if index == 0:
             story.extend(Paragraph(escape(line), contact_style) for line in block)
         elif index == 1:
+            story.append(Spacer(1, 4 * mm))
             story.extend(Paragraph(escape(line), contact_style) for line in block)
         elif index == 2:
             story.append(Paragraph(escape(block[0]), date_style))
         elif index == 3:
-            story.append(Paragraph(escape(plain_heading(block[0])), title_style))
-            story.append(Paragraph(escape(plain_heading(block[1])), reference_style))
+            title_line = plain_heading(block[0]) if block else ""
+            story.append(Paragraph(escape(title_line), title_style))
+            if len(block) > 1:
+                story.append(Paragraph(escape(plain_heading(block[1])), reference_style))
         elif index == len(blocks) - 2:
             story.append(Paragraph(escape(block[0]), closing_style))
-            story.append(Spacer(1, 7 * mm))
+            story.append(Spacer(1, 3 * mm if mt_compact else (5 * mm if compact else 7 * mm)))
         elif index == len(blocks) - 1:
             story.append(Paragraph(escape(block[0]), closing_style))
         else:
@@ -137,4 +158,8 @@ def build_pdf():
 
 
 if __name__ == "__main__":
-    build_pdf()
+    parser = argparse.ArgumentParser(description="Erzeugt ein Motivationsschreiben als PDF.")
+    parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE, help="Markdown-Datei als Vorlage")
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Zielpfad der PDF")
+    args = parser.parse_args()
+    build_pdf(args.source, args.output)

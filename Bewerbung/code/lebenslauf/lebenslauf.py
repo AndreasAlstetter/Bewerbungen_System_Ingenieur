@@ -1,17 +1,30 @@
 import argparse
+from io import BytesIO
 import re
 from pathlib import Path
 from typing import Dict, Iterable, List
 
+from PIL import Image as PILImage, ImageOps
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.units import mm
-from reportlab.platypus import BaseDocTemplate, Frame, KeepTogether, PageTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import BaseDocTemplate, Frame, Image, KeepTogether, PageTemplate, Paragraph, Spacer, Table, TableStyle
 
 BASE_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = BASE_DIR
+for candidate in [BASE_DIR, *BASE_DIR.parents[:3]]:
+    if (candidate / "shared").exists() and (candidate / "shared" / "Bewerbungsbild.jpg").exists():
+        PROJECT_ROOT = candidate
+        break
+    if (candidate / "Bewerbungsbild.jpg").exists():
+        PROJECT_ROOT = candidate
+        break
+PHOTO_PATH = PROJECT_ROOT / "shared" / "Bewerbungsbild.jpg"
+if not PHOTO_PATH.exists():
+    PHOTO_PATH = PROJECT_ROOT / "Bewerbungsbild.jpg"
 DEFAULT_COMPANY = "Ferchau"
 
 PAGE_W, PAGE_H = A4
@@ -46,7 +59,7 @@ EXPERIENCE = [
             "Vorinbetriebnahme, Funktionsprüfung und Fehleranalyse mechatronischer Maschinen und Anlagen mit Fokus auf technische Integrität.",
             "Zusammenarbeit mit Konstruktion, Montage, Softwareentwicklung und Fachabteilungen zur Lösung technischer Schnittstellenprobleme und Qualitätsabweichungen.",
             "Internationale Montage- und Inbetriebnahmeeinsätze in Spanien, Mexiko und Indien im interdisziplinären Team unter Zeitdruck.",
-            "Technische Dokumentation, Übergabeprozesse und strukturierte Anlagenanalyse für eine nachvollziehbare Betriebsübernahme.",
+            "Strukturierte Anlagenanalyse mit Fokus auf technische Integrität und Qualitätsabweichungen.",
             "Teilzeittätigkeit mit 21 Stunden pro Woche parallel zum Bachelorstudium in Systems Engineering.",
         ],
     ),
@@ -57,7 +70,7 @@ EXPERIENCE = [
         [
             "Entwicklung und Erprobung einer Pick-by-Light-Anwendung im logistischen Szenario.",
             "Programmierung und Inbetriebnahme eines AMR- und Robotiksystems im Rahmen einer Lernfabrik für industrielle Digitalisierung und Automatisierung.",
-            "Unterstützung bei 3D-Druck, Prototyping, technischer Evaluierung und Recherche zum Thema Werkerführung mit KI",
+            "Unterstützung bei 3D-Druck, Prototyping, technischer Evaluierung und Recherche zum Thema Werkerführung mit KI.",
             "Nebentätigkeit mit 8 Stunden pro Woche parallel zum Bachelorstudium in Systems Engineering.",
         ],
     ),
@@ -68,7 +81,7 @@ EDUCATION = [
         "2022 – heute",
         "Bachelorstudium Systems Engineering",
         "Technische Hochschule Augsburg",
-        "Schwerpunkte: industrielle Informationsverarbeitung, Embedded Systems, industrielle Bildverarbeitung, verteilte Systeme, IT-Security, Datenkommunikation, Operations Management, digitale Supply Chain und Projektführung.",
+        "Schwerpunkte: Informatik 1–3, industrielle Informationsverarbeitung, Embedded Systems, industrielle Bildverarbeitung, verteilte Systeme, sichere Industriesysteme, Datenkommunikation, Operations Management, digitale Supply Chain, Projektführung und Projektorganisation.",
     ),
     (
         "2021 – 2022",
@@ -104,15 +117,49 @@ PROJECTS = [
 ]
 
 SKILLS = [
-    ("Python & KI", "Python · PyTest · NumPy · Matplotlib · PyTorch  · scikit-learn · Feature Engineering · Model Evaluation"),
-    ("Data & AI", "SQL · Datenanalyse · Process Mining · Event Logs · Datenpipelines"),
+    ("Python & KI", "Python · PyTest · NumPy · Matplotlib · PyTorch · scikit-learn · Feature Engineering · Model Evaluation"),
+    ("Daten & KI", "SQL · Datenanalyse · Process Mining · Event Logs · Datenpipelines"),
     ("DevOps", "Git · Bash · VS Code · Jira · Confluence"),
     ("Industrie & Integration", "ERP-Integration · Odoo · Celonis · Automatisierung · technische Systemanalyse"),
-    ("Engineering", "EPLAN · CAD · 3D-Druck · Dokumentation · Prototyping · technische Analyse"),
+    ("Technik", "EPLAN · CAD · 3D-Druck · Dokumentation · Prototyping · technische Analyse"),
+    ("Projektmanagement", "Projektführung · Projektorganisation · Projektdesign · GPM-Basiszertifikat"),
     ("Sprachen", "Deutsch – (Muttersprache) <br/>Englisch – B1 (fortgeschritten)"),
 ]
 
 COMPANY_CONFIGS: Dict[str, Dict[str, object]] = {
+    "mt_aerospace": {
+        "display_name": "MT Aerospace",
+        "title": "Systems Engineer | Industrial AI | Mechatronik",
+        "summary": (
+            "Systems-Engineering-Student und ausgebildeter Mechatroniker mit praktischer Erfahrung in der "
+            "Vorinbetriebnahme, Funktionsprüfung und strukturierten Fehleranalyse industrieller Anlagen. Verbindet "
+            "technisches Verständnis für mechanische, elektrische und softwarebezogene Schnittstellen mit Python, "
+            "Datenanalyse, Automatisierung und Machine Learning. Besonders interessiert an zuverlässigen, "
+            "nachvollziehbaren Lösungen für anspruchsvolle Fertigungs-, Prüf- und Entwicklungsprozesse in der Luft- "
+            "und Raumfahrt sowie an innovativen Technologien wie Additive Manufacturing und Leichtbau."
+        ),
+        "focus": ["Systems Engineering", "Industrielle Automatisierung", "Python & Daten", "Technische Analyse", "Qualität & Integration"],
+        "focus_line": "Technische Systemanalyse · Python-Entwicklung · Datenpipelines · Automatisierung · industrielle Integration",
+        "project_title": "BACHELORARBEIT",
+        "project_detail": "<b>Proximitätssuche von EPLAN-Makros</b><br/>auf Basis des Lambda-Rank-Algorithmus",
+        "project_description": "Technische Bereiche: Lambda-Rank, Sentence-Transformer, Embedding-Modelle, Clustering, Triplet-Learning, Datenanalyse, Feature-Engineering, Modellbewertung und Datenaufbereitung.",
+    },
+    "xitaso": {
+        "display_name": "XITASO",
+        "title": "Softwareentwickler Python & KI | Data Science | Systems Engineering",
+        "summary": (
+            "Systems-Engineering-Student und ausgebildeter Mechatroniker mit praktischer Erfahrung in industrieller "
+            "Vorinbetriebnahme, Robotik und technischen Schnittstellen. Verbindet Python-Entwicklung, Datenanalyse und "
+            "Machine Learning mit fundierten Studienleistungen in Informatik, Embedded Systems, industrieller "
+            "Informationsverarbeitung, verteilten Systemen und sicheren Industriesystemen. Arbeitet strukturiert, "
+            "lernt schnell und entwickelt technische Lösungen gern gemeinsam im agilen Team."
+        ),
+        "focus": ["Python & KI", "Datenanalyse", "Softwareentwicklung", "Agile Zusammenarbeit", "Systems Engineering"],
+        "focus_line": "Python-Entwicklung · Machine Learning · Datenpipelines · APIs · industrielle Softwarelösungen",
+        "project_title": "BACHELORARBEIT",
+        "project_detail": "<b>Proximitätssuche von EPLAN-Makros</b><br/>auf Basis des Lambda-Rank-Algorithmus",
+        "project_description": "Technische Bereiche: Lambda-Rank, Sentence-Transformer, Embedding-Modelle, Clustering, Triplet-Learning, Datenanalyse, Feature-Engineering, Modellbewertung und Datenaufbereitung.",
+    },
     "ferchau": {
         "display_name": "Ferchau",
         "title": "Softwareentwickler KI & Data Science | Python | Machine Learning",
@@ -125,37 +172,9 @@ COMPANY_CONFIGS: Dict[str, Dict[str, object]] = {
         ),
         "focus": ["Python & KI", "Machine Learning", "Data Engineering", "APIs", "Industrial AI"],
         "focus_line": "Python-Entwicklung · Machine Learning · Deep Learning · Datenanalysen · Prozessdatenanalyse · industrielle Systemintegration",
-        "project_title": "BACHELORARBEIT & ML-PROJEKTARBEIT",
+        "project_title": "BACHELORARBEIT",
         "project_detail": "<b>Proximitätssuche von EPLAN-Makros</b><br/>auf Basis des Lambda-Rank-Algorithmus",
-        "project_description": "Technische Bereiche: Sentence-Transformer, Embedding-Modelle, Clustering, Triplet-Learning, Datenanalyse, Feature-Engineering, Modellbewertung und Datenaufbereitung.",
-    },
-    "mhp": {
-        "display_name": "MHP",
-        "title": "AI Engineer | Data Science | Python | Cloud Solutions",
-        "summary": (
-            "System-Ingenieur mit Fokus auf datengetriebene Lösungen, Prozessautomatisierung und intelligente Analyselösungen. "
-            "Verbindet technisches Verständnis für industrielle Prozesse mit KI-Architektur sowie "
-            "Praxisorientierung in der Daten- und Systemintegration."
-        ),
-        "focus": ["Python & KI", "Data Science", "Automation", "Applied AI"],
-        "focus_line": "Python-Entwicklung ·  Datenmodelle · Automatisierung",
-        "project_title": "AUSGEWÄHLTE PROJEKTE",
-        "project_detail": "<b>Odoo-to-Celonis-Datenpipeline</b><br/>Aufbau einer Prozessdaten-Pipeline für Analyse, Visualisierung und datenbasierte Optimierung.",
-        "project_description": "Technische Aspekte: Datenmodellierung, Prozessanalyse, Event Logs, ETL-Workflows und modellbasierte Entscheidungsunterstützung.",
-    },
-    "bmw_group": {
-        "display_name": "BMW Group",
-        "title": "Machine Learning Engineer | Python | Data & AI Systems",
-        "summary": (
-            "Motivierter Entwickler mit Interesse an datengetriebenen, skalierbaren AI-Lösungen im Bereich digitaler Mobilität, "
-            "Prozessdaten und automatisierter Entscheidungslogik. Bringt technisches Verständnis aus Mechatronik und Datenanalyse "
-            "mit und setzt dies praxisnah in intelligenten Software- und Analyseprozessen um."
-        ),
-        "focus": ["AI Engineering", "Data Platforms", "Python", "Analytics", "System Integration"],
-        "focus_line": "Machine Learning · Prozessdatenanalyse · Datenplattformen · API-Integration · KI-gestützte Entscheidungsprozesse",
-        "project_title": "AUSGEWÄHLTE PROJEKTE",
-        "project_detail": "<b>Automatisierte Odoo-Provisionierung</b><br/>Datenorientierte Provisionierung und Automatisierung des Produkt-, Lager- und Prozessdatenflusses.",
-        "project_description": "Technische Schwerpunkte: Datenvalidierung, Automatisierung, Integrationslogik und skalierbare Prozessoptimierung.",
+        "project_description": "Technische Bereiche: Lambda-Rank, Sentence-Transformer, Embedding-Modelle, Clustering, Triplet-Learning, Datenanalyse, Feature-Engineering, Modellbewertung und Datenaufbereitung.",
     },
 }
 
@@ -172,6 +191,7 @@ styles.add(ParagraphStyle(name="Summary", fontName="SegoeUI", fontSize=10.2, lea
 styles.add(ParagraphStyle(name="Period", fontName="SegoeUISemibold", fontSize=8.1, leading=10.5, textColor=TEAL))
 styles.add(ParagraphStyle(name="Role", fontName="SegoeUISemibold", fontSize=10.1, leading=12, textColor=TEXT))
 styles.add(ParagraphStyle(name="Company", fontName="SegoeUISemibold", fontSize=8.6, leading=11, textColor=MUTED))
+styles.add(ParagraphStyle(name="ProjectTitle", fontName="SegoeUISemibold", fontSize=9.2, leading=12, textColor=NAVY, spaceBefore=1.5 * mm, spaceAfter=1.5 * mm))
 styles.add(ParagraphStyle(name="Body", fontName="SegoeUI", fontSize=8.7, leading=11.5, textColor=TEXT))
 styles.add(ParagraphStyle(name="SmallMuted", fontName="SegoeUI", fontSize=8.3, leading=11, textColor=MUTED))
 styles.add(ParagraphStyle(name="ListBullet", fontName="SegoeUI", fontSize=8.3, leading=11, leftIndent=3 * mm, firstLineIndent=-2.5 * mm, textColor=TEXT, spaceAfter=1 * mm))
@@ -179,6 +199,26 @@ styles.add(ParagraphStyle(name="ListBullet", fontName="SegoeUI", fontSize=8.3, l
 
 def P(text, style_name):
     return Paragraph(text, styles[style_name])
+
+
+def profile_photo():
+    photo = ImageOps.exif_transpose(PILImage.open(PHOTO_PATH)).convert("RGB")
+    target_ratio = 3 / 4
+    width, height = photo.size
+    current_ratio = width / height
+    if current_ratio > target_ratio:
+        crop_width = int(height * target_ratio)
+        left = (width - crop_width) // 2
+        photo = photo.crop((left, 0, left + crop_width, height))
+    elif current_ratio < target_ratio:
+        crop_height = int(width / target_ratio)
+        top = (height - crop_height) // 2
+        photo = photo.crop((0, top, width, top + crop_height))
+
+    image_data = BytesIO()
+    photo.save(image_data, format="JPEG", quality=95)
+    image_data.seek(0)
+    return Image(image_data, width=24 * mm, height=32 * mm)
 
 
 def _slugify(value: str) -> str:
@@ -243,36 +283,52 @@ def draw_background(canvas, doc):
 
 
 class CVDocTemplate(BaseDocTemplate):
-    def __init__(self, filename, sidebar):
+    def __init__(self, filename, sidebars):
         super().__init__(filename, pagesize=A4, leftMargin=0, rightMargin=0, topMargin=0, bottomMargin=0)
         main_frame = Frame(MAIN_LEFT, 22 * mm, MAIN_W, PAGE_H - 50 * mm, id="main", leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
-        self.addPageTemplates([PageTemplate(id="CV", frames=[main_frame], onPage=lambda c, d: _on_page(c, d, sidebar))])
+        self.addPageTemplates([PageTemplate(id="CV", frames=[main_frame], onPage=lambda c, d: _on_page(c, d, sidebars))])
 
 
-def _on_page(canvas, doc, sidebar):
+def _on_page(canvas, doc, sidebars):
     draw_background(canvas, doc)
-    sidebar.wrapOn(canvas, SIDEBAR_W, PAGE_H)
-    sidebar.drawOn(canvas, 0, PAGE_H - sidebar._height - 7 * mm)
+    sidebar = sidebars.get(doc.page)
+    if sidebar is not None:
+        sidebar.wrapOn(canvas, SIDEBAR_W, PAGE_H)
+        sidebar.drawOn(canvas, 0, PAGE_H - sidebar._height - 7 * mm)
 
 
-def sidebar_story(profile):
-    focus_text = "<br/>".join(profile["focus"])
-    story = [
-        P(profile["name"], "SideName"),
-        P(profile["title"], "SideTitle"),
-        Spacer(1, 5 * mm),
-        P("PERSÖNLICHE DATEN", "SideHeading"),
-        P(f"<b>Wohnort</b><br/>{profile['location']}", "SideText"),
-        P(f"<b>Telefon</b><br/>{profile['phone']}", "SideText"),
-        P(f"<b>E-Mail</b><br/>{profile['email']}", "SideText"),
-        P(f"<b>LinkedIn</b><br/>{profile['linkedin']}", "SideText"),
-        Spacer(1, 5 * mm),
-        P("FOCUS", "SideHeading"),
-        P(focus_text, "SideText"),
-        Spacer(1, 3 * mm),
-        P("TECHNISCHE KOMPETENZEN", "SideHeading"),
-    ]
-    for label, value in SKILLS:
+def sidebar_story(profile, skill_start=0, skill_end=None, include_identity=False):
+    story = []
+    if include_identity:
+        focus_text = "<br/>".join(profile["focus"])
+        identity = Table([
+            [[P(profile["name"], "SideName"), P(profile["title"], "SideTitle")], profile_photo()]
+        ], colWidths=[26 * mm, 24 * mm], hAlign="LEFT")
+        identity.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("TOPPADDING", (0, 0), (-1, -1), 0),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+        ]))
+        story.extend([
+            identity,
+            Spacer(1, 5 * mm),
+            P("PERSÖNLICHE DATEN", "SideHeading"),
+            P(f"<b>Wohnort</b><br/>{profile['location']}", "SideText"),
+            P(f"<b>Telefon</b><br/>{profile['phone']}", "SideText"),
+            P(f"<b>E-Mail</b><br/>{profile['email']}", "SideText"),
+            P(f"<b>LinkedIn</b><br/>{profile['linkedin']}", "SideText"),
+            Spacer(1, 5 * mm),
+            P("FOKUS", "SideHeading"),
+            P(focus_text, "SideText"),
+            Spacer(1, 3 * mm),
+            P("TECHNISCHE KOMPETENZEN", "SideHeading"),
+        ])
+    else:
+        story.append(P("TECHNISCHE KOMPETENZEN · FORTSETZUNG", "SideHeading"))
+
+    for label, value in SKILLS[skill_start:skill_end]:
         story.append(P(label, "SideHeading"))
         story.append(P(value, "SideText"))
 
@@ -325,33 +381,43 @@ def build_story(profile):
 
     story.append(P("AUSGEWÄHLTE PROJEKTE", "Section"))
     for title, detail in PROJECTS:
-        story.append(P(f"<b>{title}</b><br/>{detail}", "Body"))
+        story.append(P(f"<b>{title}</b>", "ProjectTitle"))
+        story.append(P(detail, "Body"))
 
     story.extend([
         P(profile["project_title"], "Section"),
-        P(profile["project_detail"], "Body"),
+        P(profile["project_detail"], "ProjectTitle"),
         P(profile["project_description"], "SmallMuted"),
         Spacer(1, 6 * mm),
-        P("Stand: September 2026 · Referenzen und Projektdetails auf Anfrage", "SmallMuted"),
     ])
     return story
 
 
 def build_company_pdf(company_name: str, output_dir: Path | None = None) -> Path:
     profile = build_profile(company_name)
-    output_dir = output_dir or BASE_DIR
+    company_slug = _slugify(company_name)
+    output_dir = output_dir or (PROJECT_ROOT / "firmen" / company_slug / "output")
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / profile["output_name"]
 
-    sidebar = Table([[sidebar_story(profile)]], colWidths=[SIDEBAR_W], hAlign="LEFT")
-    sidebar.setStyle(TableStyle([
-        ("LEFTPADDING", (0, 0), (-1, -1), 8 * mm),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 6 * mm),
-        ("TOPPADDING", (0, 0), (-1, -1), 14 * mm),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8 * mm),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-    ]))
+    def build_sidebar(story):
+        sidebar = Table([[story]], colWidths=[SIDEBAR_W], hAlign="LEFT")
+        sidebar.setStyle(TableStyle([
+            ("LEFTPADDING", (0, 0), (-1, -1), 8 * mm),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 6 * mm),
+            ("TOPPADDING", (0, 0), (-1, -1), 14 * mm),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 8 * mm),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ]))
+        return sidebar
 
-    doc = CVDocTemplate(str(output_path), sidebar)
+    sidebars = {
+        1: build_sidebar(sidebar_story(profile, skill_end=3, include_identity=True)),
+        2: build_sidebar(sidebar_story(profile, skill_start=3)),
+    }
+
+    doc = CVDocTemplate(str(output_path), sidebars)
     doc.build(build_story(profile))
 
     if not output_path.exists() or output_path.stat().st_size == 0:
